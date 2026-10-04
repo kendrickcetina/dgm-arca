@@ -1,0 +1,171 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noquoting,es-nolists,es-noshorthands]{babel}
+\usepackage{tgpagella}
+\usepackage{inconsolata}
+\usepackage{microtype}
+\usepackage[a4paper,top=2.2cm,bottom=2.2cm,left=2.4cm,right=2.4cm]{geometry}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{needspace}
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\usepackage[most]{tcolorbox}
+\usepackage[colorlinks=true,linkcolor=arcablue,urlcolor=arcablue,citecolor=arcablue]{hyperref}
+
+% ---------------------------------------------------------------- estilo
+\definecolor{arcablue}{HTML}{1F3A63}
+\definecolor{arcagrey}{HTML}{5A6472}
+\definecolor{arcalight}{HTML}{EEF2F7}
+\definecolor{arcarule}{HTML}{C9D3E0}
+
+\titleformat{\section}{\normalfont\large\bfseries\color{arcablue}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing{\section}{0pt}{1.3ex plus .4ex minus .2ex}{0.8ex}
+\titlespacing{\subsection}{0pt}{1.2ex plus .3ex}{0.6ex}
+
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.15ex,topsep=0.4ex,parsep=0pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=0.25ex,topsep=0.4ex,parsep=0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{arcarule}\leaders\hrule height \headrulewidth\hfill}}
+\fancyhead[L]{\footnotesize\color{arcagrey}Modelos Generativos Profundos · MIA · ICAI}
+% \fancyhead[R]{\footnotesize\color{arcagrey}Práctica: ARCA}
+\fancyfoot[C]{\footnotesize\color{arcagrey}\thepage\ de \pageref{LastPage}}
+
+\newcommand{\code}[1]{{\small\texttt{#1}}}
+\newcommand{\file}[1]{{\small\texttt{\textcolor{arcablue}{#1}}}}
+
+\newtcolorbox{minimos}[1]{
+  enhanced, breakable, colback=arcalight, colframe=arcablue,
+  boxrule=0pt, leftrule=2.5pt, arc=1pt, left=8pt, right=8pt, top=6pt, bottom=6pt,
+  fonttitle=\bfseries\small, title={#1}, coltitle=arcablue,
+  attach boxed title to top left={xshift=8pt,yshift=-2pt},
+  boxed title style={colback=arcalight,boxrule=0pt,arc=0pt}
+}
+
+\newtcolorbox{nota}{
+  enhanced, breakable, colback=white, colframe=arcarule,
+  boxrule=0.6pt, arc=1pt, left=8pt, right=8pt, top=5pt, bottom=5pt
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55ex}
+
+% ---------------------------------------------------------------- documento
+\begin{document}
+
+\begin{center}
+  {\Large\bfseries\color{arcablue} Instrucciones de funcionamiento de la DGX}\\[0.6ex]
+  {\large Entrenamiento e inferencia}\\[1.2ex]
+  {\small Modelos Generativos Profundos · Máster en Inteligencia Artificial · ICAI · Curso 2026-2027}\\[0.8ex]
+\end{center}
+
+
+Para la realización de las prácticas y proyectos de este curso, se han modificado el tipo 
+de sesiones disponibles en la DGX, adecuándose a las necesidades que podáis tener tanto para el entrenamiento
+como para la inferencia.
+
+\section{Recursos disponibles}
+
+La DGX dispone de 8 GPUs Nvidia H200 de 141GB de VRAM. Se usa el sistema de GPU multi-instancia (MIG),
+cuyas nuevas instancias disponibles son las siguientes:
+
+\begin{itemize}
+  \item \textbf{46 instancias de 1/7 de GPU (16GB)}. Están pensadas para entrenamiento e inferencia
+  de modelos pequeños, especialmente para el desarrollo del agente ARCA.
+  \item \textbf{1 instancia de 1/2 de GPU (71GB)}. Pensada para aquellos equipos que quieran realizar 
+  \textit{fine-tuning} e inferencia de modelos con mayor capacidad, principalmente para el desarrollo
+  del proyecto final. \textbf{Tiene un máximo de 7 días por sesión}. Cuando se lanza un trabajo en esta isntancia,
+  queda ocupada y los trabajos que la requieran quedarán en cola de espera.
+  \item \textbf{1 instancia de 1/2 de GPU (71GB)}. Controlada por los profesores solamente y sin límite
+  de tiempo. Está pensada para proporcionar un entorno de inferencia común que pueda servir a todos los grupos
+  para:
+  \begin{itemize}
+    \item Diseño de aplicaciones de agentes que no requieran un entrenamiento adicional
+    \item Generación de trazas de razonamiento para el arranque en frío del SFT para el agente ARCA.
+  \end{itemize}
+\end{itemize}
+
+\section{Servicio de inferencia común}
+
+Una instancia gestionada por los profesores está activa de manera indefinida para todos los grupos 
+de la asignatura. 
+
+En esta instancia se ha desplegado un servidor de inferencia vLLM con el modelo \href{https://huggingface.co/Qwen/Qwen3.8-27B-FP8}{Qwen3.8-27B-FP8},
+con capacidades agénticas y de razonamiento bastante avanzadas. El servidor optimiza el servicio 
+de inferencia para servir a múltiples usuarios de manera simultánea con un rendimiento alto (compilación,
+batching, KV cache, kernel fusion...). Estos son los ajustes y prestaciones más interesante de cara al usuario:
+
+\begin{itemize}
+\item Longitud de contexto máxima de 65.536 tokens, incluyendo el prompt.
+\item Máximo de 5 secuencias simultáneas en proceso.
+\item Alrededor de 50 tokens por segundo, dependiendo de la longitud de contexto y número de requests simultáneas.
+\item Entre 1 y 7s de tiempo hasta el primer token, dependiendo de la longitud de contexto y número de requests simultáneas
+\end{itemize}
+
+Para acceder a este servicio, basta con apuntar a la URL \url{http://127.0.0.1:8000} siempre \textbf{dentro de la DGX}.
+El servidor no es accesible desde redes externas. No todos los endpoints están expuestos, estando 
+disponibles:
+
+\begin{itemize}
+  \item \code{GET:/health}: check de estado del servidor.
+  \item \code{GET:/v1/models} modelos disponibles.
+  \item \code{POST:/v1/chat/completions}: generación de texto en formato chat.
+  \item \code{POST:/v1/completions}: generación de texto.
+  \item \code{GET:/metrics}: check de métricas del servidor
+\end{itemize}
+
+\pagebreak
+
+\subsection{Ejemplo de uso}
+
+A continuación se muestra un ejemplo de uso del endpoint \code{POST:/v1/chat/completions} con \texttt{curl}:
+
+\begin{verbatim}
+ curl -X POST http://127.0.0.1:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen3.8-27b-fp8",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with the word READY."
+      }
+    ],
+    "max_tokens": 64,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  }' 
+\end{verbatim}
+
+Nótese el nombre del modelo \texttt{qwen3.8-27b-fp8} y el parámetro \texttt{chat\_template\_kwargs},
+que permite desactivar la generación de trazas de razonamiento.
+
+\textbf{Los ajustes de muestreo deberían ser los de por defecto usando el modo con razonamiento}. Para usar
+el modo sin razonamiento, consultar los parámetros en \href{https://huggingface.co/Qwen/Qwen3.8-27B-FP8}{la ficha del modelo}.
+
+Los frameworks de aplicaciones de agentes tienen normalmente soporte para estas APIs tipo OpenAI. Por ejemplo,
+LangChain permite establecer conexión mediante un cliente definido como sigue:
+
+\begin{verbatim}
+  ChatOpenAI(
+        model="qwen3.8-27b-fp8",
+        base_url="http://localhost:8000/v1",
+        api_key="EMPTY",
+    )
+\end{verbatim}
+
+donde \code{api\_key} puede ser cualquier valor, ya que el servidor no requiere autenticación.
+
+\end{document}
